@@ -1,0 +1,73 @@
+--- розрізи даних(view)
+USE Uni;
+GO
+CREATE OR ALTER VIEW dbo.vw_StudentInfo
+AS
+SELECT
+    
+    s.LastName,
+    s.FirstName,
+    s.MiddleName,
+    g.Name AS GroupName,
+    sp.Name AS SpecializationName
+FROM Student s
+JOIN SGroup g ON s.GroupID = g.ID
+JOIN Specialization sp ON g.SpecializationID = sp.ID
+WHERE s.IsDeleted = 0;
+GO
+SELECT *
+FROM dbo.vw_StudentInfo
+ORDER BY LastName;
+GO
+
+ 
+CREATE OR ALTER VIEW dbo.vw_GradeDetails
+AS
+SELECT
+    sg.Name AS GroupName,
+    d.Name AS DisciplineName,
+    at.Name AS AssessmentType,
+    s.FirstName,
+    s.LastName,    
+    gr.Value,
+    gr.MaxValue,
+    gr.GradedAt
+FROM Grade gr
+JOIN Student s ON gr.StudentID = s.ID
+JOIN SGroup sg ON s.GroupID = sg.ID
+JOIN CurriculumDiscipline cd
+    ON gr.CurriculumDisciplineID = cd.ID
+JOIN Discipline d ON cd.DisciplineID = d.ID
+JOIN AssessmentType at ON gr.AssessmentTypeID = at.ID
+WHERE s.IsDeleted = 0
+  AND d.IsDeleted = 0;
+GO
+
+SELECT *
+FROM dbo.vw_GradeDetails
+WHERE GroupName = N'КН-21'
+ORDER BY  DisciplineName;
+
+CREATE OR ALTER VIEW dbo.vw_GroupInfo
+AS
+SELECT
+    g.ID AS GroupID,
+    g.Name AS GroupName,
+    g.StartYear,
+    g.EndYear,
+    sp.Name AS SpecializationName
+FROM SGroup g
+JOIN Specialization sp ON sp.ID = g.SpecializationID
+WHERE g.IsDeleted = 0;
+GO
+
+--- індекси
+CREATE NONCLUSTERED INDEX IX_Grade_StudentID 
+ON dbo.Grade (StudentID);
+GO
+ 
+CREATE NONCLUSTERED INDEX IX_Student_WithUser
+    ON dbo.Student (UniUserID)
+    WHERE UniUserID IS NOT NULL;
+GO
+
