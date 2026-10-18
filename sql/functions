@@ -1,0 +1,66 @@
+CREATE OR ALTER FUNCTION dbo.GetClassroomCountByBuilding
+(
+    @BuildingName NVARCHAR(100)
+)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @ClassroomCount INT;
+
+    SELECT @ClassroomCount = COUNT(*)
+    FROM Classroom c
+    JOIN Building b ON c.BuildingID = b.ID
+    WHERE b.Name = @BuildingName;
+
+    RETURN @ClassroomCount;
+END;
+GO
+SELECT dbo.GetClassroomCountByBuilding(N'Головний корпус')
+    AS ClassroomCount;
+
+ 
+ CREATE FUNCTION dbo.GetStudentCountByGroup
+(
+    @GroupName NVARCHAR(100)
+)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @StudentCount INT;
+
+    SELECT @StudentCount = COUNT(*)
+    FROM Student s
+    JOIN SGroup g ON s.GroupID = g.ID
+    WHERE g.Name = @GroupName
+      AND s.IsDeleted = 0;
+
+    RETURN @StudentCount;
+END;
+GO
+
+SELECT dbo.GetStudentCountByGroup(N'КН-21')
+    AS StudentCount;
+ 
+CREATE FUNCTION dbo.GetDisciplineCountBySpecialization
+(
+    @SpecializationName NVARCHAR(100)
+)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @DisciplineCount INT;
+
+    SELECT @DisciplineCount = COUNT(*)
+    FROM CurriculumDiscipline cd
+    JOIN Specialization s
+        ON cd.SpecializationID = s.ID
+    WHERE s.Name = @SpecializationName;
+
+    RETURN @DisciplineCount;
+END;
+GO
+
+SELECT dbo.GetDisciplineCountBySpecialization(
+    N'Комп''ютерні науки'
+) AS DisciplineCount;
+
