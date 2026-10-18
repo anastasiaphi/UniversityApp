@@ -1,0 +1,90 @@
+ 
+CREATE OR ALTER TRIGGER dbo.trg_Student_Audit
+ON Student
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    UPDATE s
+    SET ModifiedAt = SYSDATETIME()
+    FROM Student s
+        INNER JOIN inserted i ON i.ID = s.ID;
+END;
+GO
+ 
+CREATE OR ALTER TRIGGER dbo.trg_Teacher_Audit
+ON Teacher
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    UPDATE t
+    SET ModifiedAt = SYSDATETIME()
+    FROM Teacher t
+        INNER JOIN inserted i ON i.ID = t.ID;
+END;
+GO
+ 
+CREATE OR ALTER TRIGGER dbo.trg_Discipline_Audit
+ON Discipline
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    UPDATE d
+    SET ModifiedAt = SYSDATETIME()
+    FROM Discipline d
+        INNER JOIN inserted i ON i.ID = d.ID;
+END;
+GO
+ 
+CREATE OR ALTER TRIGGER dbo.trg_SGroup_Audit
+ON SGroup
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    UPDATE g
+    SET ModifiedAt = SYSDATETIME()
+    FROM SGroup g
+        INNER JOIN inserted i ON i.ID = g.ID;
+END;
+GO
+ 
+CREATE OR ALTER TRIGGER dbo.trg_Grade_Audit
+ON Grade
+AFTER UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    UPDATE gr
+    SET ModifiedAt = SYSDATETIME()
+    FROM Grade gr
+        INNER JOIN inserted i ON i.ID = gr.ID;
+END;
+GO
+ 
+ 
+ 
+CREATE TRIGGER TR_Grade_CheckMaxValue
+ON Grade
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM inserted
+        WHERE Value > MaxValue
+    )
+    BEGIN
+        THROW 50001,
+            N'Помилка: оцінка не може перевищувати максимальний бал!',
+            1;
+    END;
+END;
+GO
