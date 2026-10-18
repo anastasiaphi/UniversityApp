@@ -1,0 +1,170 @@
+--- створити студента
+CREATE OR ALTER PROCEDURE dbo.sp_AddStudent
+    @GroupID       INT,
+    @FirstName     NVARCHAR(50),
+    @LastName      NVARCHAR(50),
+    @MiddleName    NVARCHAR(50) = NULL,
+    @BirthDate     DATE         = NULL,
+    @Phone         NVARCHAR(20) = NULL,
+    @UniUserID     INT          = NULL,
+    @NewStudentID  INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM SGroup WHERE ID = @GroupID AND IsDeleted = 0)
+        THROW 50001, N'Групу не знайдено або вона в архіві.', 1;
+ 
+    INSERT INTO Student (UniUserID, GroupID, FirstName, MiddleName, LastName, BirthDate, Phone)
+    VALUES (@UniUserID, @GroupID, @FirstName, @MiddleName, @LastName, @BirthDate, @Phone);
+ 
+    SET @NewStudentID = SCOPE_IDENTITY();
+END;
+GO
+ 
+-- "Видалити" студента 
+CREATE OR ALTER PROCEDURE dbo.sp_SoftDeleteStudent
+    @StudentID         INT,
+    @ModifiedByUserID  INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Student WHERE ID = @StudentID AND IsDeleted = 0)
+        THROW 50002, N'Студента не знайдено або його вже видалено.', 1;
+ 
+    UPDATE Student
+    SET IsDeleted = 1,
+        ModifiedByUserID = @ModifiedByUserID
+    WHERE ID = @StudentID;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_AddTeacher
+    @DepartmentID  INT,
+    @PositionID    INT,
+    @FirstName     NVARCHAR(50),
+    @LastName      NVARCHAR(50),
+    @MiddleName    NVARCHAR(50) = NULL,
+    @UniUserID     INT          = NULL,
+    @NewTeacherID  INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Department WHERE ID = @DepartmentID)
+        THROW 50020, N'Кафедру не знайдено.', 1;
+ 
+    IF NOT EXISTS (SELECT 1 FROM [Position] WHERE ID = @PositionID)
+        THROW 50020, N'Посаду не знайдено.', 1;
+ 
+    IF @UniUserID IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM UniUser WHERE ID = @UniUserID AND IsDeleted = 0)
+        THROW 50038, N'Користувача не знайдено або його видалено.', 1;
+ 
+    INSERT INTO Teacher (UniUserID, DepartmentID, PositionID, FirstName, MiddleName, LastName)
+    VALUES (@UniUserID, @DepartmentID, @PositionID, @FirstName, @MiddleName, @LastName);
+ 
+    SET @NewTeacherID = SCOPE_IDENTITY();
+END;
+GO
+ 
+CREATE OR ALTER PROCEDURE dbo.sp_SoftDeleteTeacher
+    @TeacherID         INT,
+    @ModifiedByUserID  INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Teacher WHERE ID = @TeacherID AND IsDeleted = 0)
+        THROW 50021, N'Викладача не знайдено або його вже видалено.', 1;
+ 
+    UPDATE Teacher
+    SET IsDeleted = 1,
+        ModifiedByUserID = @ModifiedByUserID
+    WHERE ID = @TeacherID;
+END;
+GO
+ 
+
+CREATE OR ALTER PROCEDURE dbo.sp_AddDiscipline
+    @DepartmentID      INT,
+    @Name              NVARCHAR(150),
+    @NewDisciplineID   INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Department WHERE ID = @DepartmentID)
+        THROW 50022, N'Кафедру не знайдено.', 1;
+ 
+    INSERT INTO Discipline (DepartmentID, Name)
+    VALUES (@DepartmentID, @Name);
+ 
+    SET @NewDisciplineID = SCOPE_IDENTITY();
+END;
+GO
+
+
+
+CREATE OR ALTER PROCEDURE dbo.sp_SoftDeleteDiscipline
+    @DisciplineID      INT,
+    @ModifiedByUserID  INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Discipline WHERE ID = @DisciplineID AND IsDeleted = 0)
+        THROW 50023, N'Дисципліну не знайдено або її вже видалено.', 1;
+ 
+    UPDATE Discipline
+    SET IsDeleted = 1,
+        ModifiedByUserID = @ModifiedByUserID
+    WHERE ID = @DisciplineID;
+END;
+GO
+ 
+CREATE OR ALTER PROCEDURE dbo.sp_RestoreDiscipline
+    @DisciplineID      INT,
+    @ModifiedByUserID  INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Discipline WHERE ID = @DisciplineID AND IsDeleted = 1)
+        THROW 50044, N'Дисципліну не знайдено або вона не видалена.', 1;
+ 
+    UPDATE Discipline
+    SET IsDeleted = 0,
+        ModifiedByUserID = @ModifiedByUserID
+    WHERE ID = @DisciplineID;
+END;
+GO
+ 
+
+ 
+CREATE OR ALTER PROCEDURE dbo.sp_AddGroup
+    @SpecializationID  INT,
+    @Name              NVARCHAR(20),
+    @StartYear         SMALLINT,
+    @EndYear           SMALLINT = NULL,
+    @NewGroupID        INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+ 
+    IF NOT EXISTS (SELECT 1 FROM Specialization WHERE ID = @SpecializationID)
+        THROW 50024, N'Спеціальність не знайдено.', 1;
+ 
+    IF EXISTS (SELECT 1 FROM SGroup WHERE Name = @Name)
+        THROW 50025, N'Група з такою назвою вже існує.', 1;
+ 
+    IF @EndYear IS NOT NULL AND @EndYear <= @StartYear
+        THROW 50026, N'Рік випуску має бути більшим за рік вступу.', 1;
+ 
+    INSERT INTO SGroup (SpecializationID, Name, StartYear, EndYear)
+    VALUES (@SpecializationID, @Name, @StartYear, @EndYear);
+ 
+    SET @NewGroupID = SCOPE_IDENTITY();
+END;
+GO
